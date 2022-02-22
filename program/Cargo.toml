@@ -7,6 +7,8 @@ publish = false
 
 [dependencies]
 solana-program = "=1.9.4"
+borsh = "0.9.3"
+borsh-derive = "0.9.3"
 
 [features]
 test-bpf = []
