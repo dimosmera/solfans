@@ -1,6 +1,9 @@
 //! program API
 
 use borsh::{BorshDeserialize, BorshSerialize};
+use solana_program::program_error::ProgramError;
+
+use crate::error::SolfansError::InvalidInstruction;
 
 #[derive(BorshSerialize, BorshDeserialize, Debug)]
 pub struct MembershipDetails {
@@ -20,25 +23,23 @@ pub enum MembershipInstruction {
      * 2. `[writable]` The Solfans data account funds will be transferred to. It will also hold all the necessary info about the transaction
      */
     StartMembership {
-        membershipDetails: MembershipDetails,
+        membership_details: MembershipDetails,
     },
 }
 
 impl MembershipInstruction {
-    pub fn getInstruction(instructionData: &[u8]) -> Result<Self, ProgramError> {
-        if instructionData.len() == 0 {
-            return Err(ProgramError::InvalidInstructionData);
+    pub fn get_instruction(instruction_data: &[u8]) -> Result<Self, ProgramError> {
+        if instruction_data.len() == 0 {
+            return Err(InvalidInstruction.into());
         }
 
-        let instructionType = instructionData[0];
+        let instruction_type = instruction_data[0];
 
-        match instructionType {
-            0 => {
-                let mut membershipDetails = MembershipDetails::try_from_slice(&instructionData)?;
-
-                return Self::StartMembership { membershipDetails };
-            }
-            _ => return Err(ProgramError::InvalidInstructionData),
-        }
+        Ok(match instruction_type {
+            0 => Self::StartMembership {
+                membership_details: MembershipDetails::try_from_slice(&instruction_data)?,
+            },
+            _ => return Err(InvalidInstruction.into()),
+        })
     }
 }

@@ -7,29 +7,29 @@ use crate::instruction::{MembershipDetails, MembershipInstruction};
 pub struct Processor;
 
 impl Processor {
-    pub fn processInstruction(
-        programId: &Pubkey,
+    pub fn process_instruction(
+        program_id: &Pubkey,
         accounts: &[AccountInfo],
-        instructionData: &[u8],
+        instruction_data: &[u8],
     ) -> ProgramResult {
-        let instruction = MembershipInstruction::getInstruction(instructionData)?;
+        let instruction = MembershipInstruction::get_instruction(instruction_data)?;
 
         match instruction {
-            MembershipInstruction::StartMembership { membershipDetails } => {
-                Self::processStartMembership(programId, accounts, membershipDetails)
+            MembershipInstruction::StartMembership { membership_details } => {
+                Self::process_start_membership(program_id, accounts, membership_details)
             }
         }
     }
 
-    fn processStartMembership(
-        programId: &Pubkey,
+    fn process_start_membership(
+        program_id: &Pubkey,
         accounts: &[AccountInfo],
-        membershipDetails: MembershipDetails,
+        membership_details: MembershipDetails,
     ) -> ProgramResult {
         msg!(
             "StartMembership ix with amount of {} and months of {}",
-            membershipDetails.amount,
-            membershipDetails.months
+            membership_details.amount,
+            membership_details.months
         );
 
         Ok(())
