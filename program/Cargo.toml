@@ -12,6 +12,7 @@ borsh-derive = "0.9.3"
 thiserror = "1.0.30"
 
 [features]
+no-entrypoint = []
 test-bpf = []
 
 [dev-dependencies]

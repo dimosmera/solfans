@@ -5,8 +5,8 @@ use thiserror::Error;
 
 #[derive(Error, Debug, Copy, Clone)]
 pub enum SolfansError {
-    #[error("Not Rent Exempt")]
-    NotRentExempt,
+    #[error("Invalid Passed PDA")]
+    InvalidPassedPDA,
 }
 
 impl From<SolfansError> for ProgramError {
