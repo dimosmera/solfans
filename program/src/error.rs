@@ -7,6 +7,8 @@ use thiserror::Error;
 pub enum SolfansError {
     #[error("Invalid Passed PDA")]
     InvalidPassedPDA,
+    #[error("Insufficient Funds For Transaction")]
+    InsufficientFundsForTransaction,
 }
 
 impl From<SolfansError> for ProgramError {

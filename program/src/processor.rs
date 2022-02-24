@@ -5,7 +5,7 @@ use solana_program::{
     account_info::{next_account_info, AccountInfo},
     entrypoint::ProgramResult,
     msg,
-    program::invoke_signed,
+    program::{invoke, invoke_signed},
     program_error::ProgramError,
     pubkey::Pubkey,
     rent::Rent,
@@ -15,7 +15,7 @@ use solana_program::{
 };
 use std::mem;
 
-use crate::error::SolfansError::InvalidPassedPDA;
+use crate::error::SolfansError;
 use crate::state::MembershipDetails;
 
 pub struct Processor;
@@ -90,18 +90,27 @@ impl Processor {
         ];
         let pda = Pubkey::create_program_address(signers_seeds, program_id)?;
         if pda.ne(&solfans_state_account.key) {
-            return Err(InvalidPassedPDA.into());
+            return Err(SolfansError::InvalidPassedPDA.into());
         }
 
         // Find out how many lamports the state account needs in order to be rent exempt
         const ACCOUNT_DATA_LEN: usize = mem::size_of::<MembershipDetails>();
-        let lamports_required = Rent::get()?.minimum_balance(ACCOUNT_DATA_LEN);
+        let lamports_required_for_pda_creation = Rent::get()?.minimum_balance(ACCOUNT_DATA_LEN);
+
+        let lamports_to_transfer_to_pda = u64::from(membership_details.amount);
+
+        // Make sure the fan has enough lamports to pay for the 2 instructions
+        if **fan_account.try_borrow_lamports()?
+            < (lamports_to_transfer_to_pda + lamports_required_for_pda_creation)
+        {
+            return Err(SolfansError::InsufficientFundsForTransaction.into());
+        }
 
         // Create the Program Derived Address account
         let create_pda_account_ix = system_instruction::create_account(
             &fan_account.key,
             &solfans_state_account.key,
-            lamports_required,
+            lamports_required_for_pda_creation,
             ACCOUNT_DATA_LEN.try_into().unwrap(),
             &program_id,
         );
@@ -142,6 +151,20 @@ impl Processor {
         pda_account_state.amount = membership_details.amount;
         pda_account_state.months = membership_details.months;
         pda_account_state.serialize(&mut &mut solfans_state_account.data.borrow_mut()[..])?;
+
+        // Transfer SOL from fan to pda acount
+        invoke(
+            &system_instruction::transfer(
+                fan_account.key,
+                solfans_state_account.key,
+                lamports_to_transfer_to_pda,
+            ),
+            &[
+                fan_account.clone(),
+                solfans_state_account.clone(),
+                system_program.clone(),
+            ],
+        )?;
 
         Ok(())
     }
