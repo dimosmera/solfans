@@ -3,6 +3,7 @@
 use borsh::{BorshDeserialize, BorshSerialize};
 use solana_program::{
     account_info::{next_account_info, AccountInfo},
+    clock::Clock,
     entrypoint::ProgramResult,
     msg,
     program::{invoke, invoke_signed},
@@ -16,6 +17,7 @@ use solana_program::{
 use std::mem;
 
 use crate::error::SolfansError;
+use crate::props::StartMembershipProps;
 use crate::state::MembershipDetails;
 
 pub struct Processor;
@@ -56,7 +58,7 @@ impl Processor {
         accounts: &[AccountInfo],
         instruction_data: &[u8],
     ) -> ProgramResult {
-        let membership_details = MembershipDetails::try_from_slice(&instruction_data)
+        let props = StartMembershipProps::try_from_slice(&instruction_data)
             .expect("Instruction data serialization didn't work");
 
         // Get all accounts
@@ -86,7 +88,7 @@ impl Processor {
         let signers_seeds: &[&[u8]; 3] = &[
             b"solfansseeds",
             &fan_account.key.to_bytes(),
-            &[membership_details.pda_bump],
+            &[props.pda_bump],
         ];
         let pda = Pubkey::create_program_address(signers_seeds, program_id)?;
         if pda.ne(&solfans_state_account.key) {
@@ -97,9 +99,8 @@ impl Processor {
         const ACCOUNT_DATA_LEN: usize = mem::size_of::<MembershipDetails>();
         let lamports_required_for_pda_creation = Rent::get()?.minimum_balance(ACCOUNT_DATA_LEN);
 
-        let lamports_to_transfer_to_pda = u64::from(membership_details.amount);
-
         // Make sure the fan has enough lamports to pay for the 2 instructions
+        let lamports_to_transfer_to_pda = u64::from(props.amount);
         if **fan_account.try_borrow_lamports()?
             < (lamports_to_transfer_to_pda + lamports_required_for_pda_creation)
         {
@@ -148,8 +149,17 @@ impl Processor {
 
         // Set state for PDA
         pda_account_state.is_initialized = 1;
-        pda_account_state.amount = membership_details.amount;
-        pda_account_state.months = membership_details.months;
+
+        let clock = Clock::get()?;
+        let membership_start = clock.unix_timestamp;
+
+        pda_account_state.amount = props.amount;
+        pda_account_state.months = props.months;
+        pda_account_state.membership_start = membership_start;
+
+        pda_account_state.fun_pubkey = *fan_account.key;
+        pda_account_state.creator_pubkey = *creator_account.key;
+
         pda_account_state.serialize(&mut &mut solfans_state_account.data.borrow_mut()[..])?;
 
         // Transfer SOL from fan to pda acount
@@ -165,6 +175,8 @@ impl Processor {
                 system_program.clone(),
             ],
         )?;
+
+        msg!("nice :)");
 
         Ok(())
     }
