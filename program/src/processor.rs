@@ -32,16 +32,20 @@ impl Processor {
             return Err(ProgramError::InvalidInstructionData);
         }
 
-        let instruction_type = instruction_data[0];
-        if instruction_type == 0 {
-            return Self::process_start_membership(
-                program_id,
-                accounts,
-                &instruction_data[1..instruction_data.len()],
-            );
-        }
+        let (instruction_type, data) = instruction_data
+            .split_first()
+            .ok_or(ProgramError::InvalidInstructionData)?;
 
-        return Err(ProgramError::InvalidInstructionData);
+        match instruction_type {
+            0 => {
+                return Self::process_start_membership(
+                    program_id,
+                    accounts,
+                    StartMembershipProps::try_from_slice(data)?,
+                )
+            }
+            _ => return Err(ProgramError::InvalidInstructionData),
+        }
     }
 
     /**
@@ -56,11 +60,8 @@ impl Processor {
     fn process_start_membership(
         program_id: &Pubkey,
         accounts: &[AccountInfo],
-        instruction_data: &[u8],
+        props: StartMembershipProps,
     ) -> ProgramResult {
-        let props = StartMembershipProps::try_from_slice(&instruction_data)
-            .expect("Instruction data serialization didn't work");
-
         // Get all accounts
         let account_info_iter = &mut accounts.iter();
 
@@ -139,7 +140,7 @@ impl Processor {
             return Err(ProgramError::AccountNotRentExempt);
         }
 
-        let mut pda_account_state =
+        let pda_account_state =
             MembershipDetails::try_from_slice(&solfans_state_account.data.borrow())?;
 
         // Make sure the state hasn't been initialized already
@@ -147,20 +148,17 @@ impl Processor {
             return Err(ProgramError::AccountAlreadyInitialized);
         }
 
-        // Set state for PDA
-        pda_account_state.is_initialized = 1;
-
         let clock = Clock::get()?;
         let membership_start = clock.unix_timestamp;
 
-        pda_account_state.amount = props.amount;
-        pda_account_state.months = props.months;
-        pda_account_state.membership_start = membership_start;
+        let new_state = MembershipDetails::new(
+            props,
+            *fan_account.key,
+            *creator_account.key,
+            membership_start,
+        );
 
-        pda_account_state.fun_pubkey = *fan_account.key;
-        pda_account_state.creator_pubkey = *creator_account.key;
-
-        pda_account_state.serialize(&mut &mut solfans_state_account.data.borrow_mut()[..])?;
+        new_state.serialize(&mut &mut solfans_state_account.data.borrow_mut()[..])?;
 
         // Transfer SOL from fan to pda acount
         invoke(
