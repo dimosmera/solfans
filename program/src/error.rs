@@ -9,6 +9,10 @@ pub enum SolfansError {
     InvalidPassedPDA,
     #[error("Insufficient Funds For Transaction")]
     InsufficientFundsForTransaction,
+    #[error("Account Not Initialized")]
+    AccountNotInitialized,
+    #[error("Invalid Start Or End Time")]
+    InvalidStartOrEndTime,
 }
 
 impl From<SolfansError> for ProgramError {

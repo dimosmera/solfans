@@ -12,4 +12,11 @@ pub struct StartMembershipProps {
 
     // The bump seed for the new PDA Solfans account
     pub pda_bump: u8,
+
+    pub membership_start_time: i64,
+
+    pub membership_end_time: i64,
 }
+
+#[derive(BorshSerialize, BorshDeserialize, Debug)]
+pub struct WithdrawProps {}

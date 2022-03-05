@@ -17,10 +17,13 @@ use solana_program::{
 use std::mem;
 
 use crate::error::SolfansError;
-use crate::props::StartMembershipProps;
+use crate::props::{StartMembershipProps, WithdrawProps};
 use crate::state::MembershipDetails;
 
 pub struct Processor;
+
+// TODO: Get programs with filters https://solanacookbook.com/guides/get-program-accounts.html#filters
+// https://learn.figment.io/tutorials/solana-token-streaming-protocol#writing-instruction-logic
 
 impl Processor {
     pub fn process_instruction(
@@ -42,6 +45,13 @@ impl Processor {
                     program_id,
                     accounts,
                     StartMembershipProps::try_from_slice(data)?,
+                )
+            }
+            1 => {
+                return Self::process_withdraw(
+                    program_id,
+                    accounts,
+                    WithdrawProps::try_from_slice(data)?,
                 )
             }
             _ => return Err(ProgramError::InvalidInstructionData),
@@ -96,6 +106,13 @@ impl Processor {
             return Err(SolfansError::InvalidPassedPDA.into());
         }
 
+        // Make sure dates sent are correct
+        if props.membership_end_time <= props.membership_start_time
+            || props.membership_start_time < Clock::get()?.unix_timestamp
+        {
+            return Err(SolfansError::InvalidStartOrEndTime.into());
+        }
+
         // Find out how many lamports the state account needs in order to be rent exempt
         const ACCOUNT_DATA_LEN: usize = mem::size_of::<MembershipDetails>();
         let lamports_required_for_pda_creation = Rent::get()?.minimum_balance(ACCOUNT_DATA_LEN);
@@ -148,15 +165,7 @@ impl Processor {
             return Err(ProgramError::AccountAlreadyInitialized);
         }
 
-        let clock = Clock::get()?;
-        let membership_start = clock.unix_timestamp;
-
-        let new_state = MembershipDetails::new(
-            props,
-            *fan_account.key,
-            *creator_account.key,
-            membership_start,
-        );
+        let new_state = MembershipDetails::new(props, *fan_account.key, *creator_account.key);
 
         new_state.serialize(&mut &mut solfans_state_account.data.borrow_mut()[..])?;
 
@@ -170,6 +179,97 @@ impl Processor {
             &[
                 fan_account.clone(),
                 solfans_state_account.clone(),
+                system_program.clone(),
+            ],
+        )?;
+
+        msg!("nice :)");
+
+        Ok(())
+    }
+
+    /**
+     * Allows a creator to withdraw funds they are allowed to
+     *
+     * Accounts expected:
+     * 0. `[signer]` The account of the creator who will receive the funds
+     * 2. `[writable]` The Solfans PDA account that holds the funds
+     * 3. `[]` The System Program account
+     */
+    fn process_withdraw(
+        program_id: &Pubkey,
+        accounts: &[AccountInfo],
+        _props: WithdrawProps, // TODO: if we dont need these, delete them
+    ) -> ProgramResult {
+        // Get all accounts
+        let account_info_iter = &mut accounts.iter();
+
+        let creator_account = next_account_info(account_info_iter)?;
+        let solfans_state_account = next_account_info(account_info_iter)?;
+        let system_program = next_account_info(account_info_iter)?;
+
+        // Make sure the creator is the signer
+        if !creator_account.is_signer {
+            return Err(ProgramError::MissingRequiredSignature);
+        }
+
+        // Make sure the state account is writable
+        if !solfans_state_account.is_writable {
+            return Err(ProgramError::InvalidAccountData);
+        }
+
+        // Make sure the state account's owner is the current program
+        if solfans_state_account.owner.ne(&program_id) {
+            return Err(ProgramError::IllegalOwner);
+        }
+
+        // Make sure the system program passed is valid
+        if system_program.key.ne(&SYSTEM_PROGRAM_ID) {
+            return Err(ProgramError::IncorrectProgramId);
+        }
+
+        let mut escrow_data =
+            MembershipDetails::try_from_slice(&solfans_state_account.data.borrow())?;
+
+        // Make sure the state has been initialized already
+        if escrow_data.is_initialized.ne(&1) {
+            return Err(SolfansError::AccountNotInitialized.into());
+        }
+
+        // Make sure the creator who is trying to claim is who we expect
+        if *creator_account.key != escrow_data.creator_pubkey {
+            return Err(ProgramError::IllegalOwner);
+        }
+
+        let time_now = Clock::get()?.unix_timestamp;
+
+        let sol_per_month = u32::from(escrow_data.months) / escrow_data.amount;
+
+        let funds_creator_can_withdraw = u64::from(sol_per_month)
+            * ((std::cmp::min(time_now, escrow_data.membership_end_time)
+                - escrow_data.membership_start_time) as u64)
+            - escrow_data.funds_claimed_so_far;
+
+        msg!("funds_creator_can_withdraw: {}", funds_creator_can_withdraw);
+
+        // Make sure the account has enough to give
+        if **solfans_state_account.try_borrow_lamports()? < funds_creator_can_withdraw {
+            return Err(SolfansError::InsufficientFundsForTransaction.into());
+        }
+
+        escrow_data.funds_claimed_so_far += funds_creator_can_withdraw;
+        escrow_data.serialize(&mut &mut solfans_state_account.data.borrow_mut()[..])?;
+
+        // Transfer SOL from pda account to creator
+        invoke(
+            &system_instruction::transfer(
+                solfans_state_account.key,
+                creator_account.key,
+                funds_creator_can_withdraw,
+            ),
+            &[
+                solfans_state_account.clone(),
+                creator_account.clone(),
                 system_program.clone(),
             ],
         )?;
