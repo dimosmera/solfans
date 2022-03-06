@@ -7,39 +7,42 @@ import {
   SystemProgram,
   Transaction,
   TransactionInstruction,
-} from '@solana/web3.js';
+} from "@solana/web3.js";
 import { deserialize, serialize } from "borsh";
 
 // Flexible class that takes properties and imbues them
 // to the object instance
 class Assignable {
   constructor(properties: any) {
-      Object.keys(properties).map((key) => {
-        //@ts-ignore
-          return (this[key] = properties[key]);
-      });
+    Object.keys(properties).map((key) => {
+      //@ts-ignore
+      return (this[key] = properties[key]);
+    });
   }
 }
 
 class StartMembership extends Assignable {
-  static schema = new Map([[StartMembership,
+  static schema = new Map([
+    [
+      StartMembership,
       {
-          kind: 'struct',
-          fields: [
-              ['amount', 'u32'],
-              ['months', 'u16'],
-              ['pda_bump', 'u8']]
-      }]]);
+        kind: "struct",
+        fields: [
+          ["amount", "u32"],
+          ["months", "u16"],
+          ["pda_bump", "u8"],
+        ],
+      },
+    ],
+  ]);
 }
 
-const connection = new Connection("http://localhost:8899", 'singleGossip');
+const connection = new Connection("http://localhost:8899", "singleGossip");
 const FAN_KEYPAIR = Keypair.generate();
 const CREATOR_KEYPAIR = Keypair.generate();
 
 const subscribe = async () => {
-  const programId = new PublicKey(
-    '3cqyjpcJyCeRLvYg32btdnEYaXVVydz2hNiPoLb34PRB'
-  );
+  const programId = new PublicKey("3cqyjpcJyCeRLvYg32btdnEYaXVVydz2hNiPoLb34PRB");
 
   // Airdop to Payer
   await connection.confirmTransaction(
@@ -47,7 +50,7 @@ const subscribe = async () => {
   );
 
   const [pda, bump] = await PublicKey.findProgramAddress(
-    [Buffer.from('solfansseeds'), FAN_KEYPAIR.publicKey.toBuffer()],
+    [Buffer.from("solfansseeds"), FAN_KEYPAIR.publicKey.toBuffer()],
     programId
   );
 
@@ -58,18 +61,17 @@ const subscribe = async () => {
     months: 3,
     // TODO: This remains a question. Why do I have to have this in my state as well?
     pda_bump: bump,
-  })
+  });
 
-  console.log('membership: ', membership);
+  console.log("membership: ", membership);
 
   let data = serialize(StartMembership.schema, membership);
 
-  const lamports =
-  (await connection.getMinimumBalanceForRentExemption(data.length));
+  const lamports = await connection.getMinimumBalanceForRentExemption(data.length);
 
-  console.log('!!lamports: ', lamports);
+  console.log("!!lamports: ", lamports);
 
-  console.log('data: ', data);
+  console.log("data: ", data);
   const createPDAIx = new TransactionInstruction({
     programId: programId,
     data: Buffer.from(new Uint8Array([0, ...data])),
@@ -99,9 +101,9 @@ const subscribe = async () => {
 
   const transaction = new Transaction();
   transaction.add(createPDAIx);
-  console.log('transaction: ', transaction);
+  console.log("transaction: ", transaction);
 
   return connection.sendTransaction(transaction, [FAN_KEYPAIR]);
-}
+};
 
 export default subscribe;
