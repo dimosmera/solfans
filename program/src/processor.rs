@@ -22,9 +22,6 @@ use crate::state::MembershipDetails;
 
 pub struct Processor;
 
-// TODO: Get programs with filters https://solanacookbook.com/guides/get-program-accounts.html#filters
-// https://learn.figment.io/tutorials/solana-token-streaming-protocol#writing-instruction-logic
-
 impl Processor {
     pub fn process_instruction(
         program_id: &Pubkey,
