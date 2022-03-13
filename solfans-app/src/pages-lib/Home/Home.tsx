@@ -2,6 +2,7 @@ import Head from "next/head";
 
 import subscribe from "utils/subscribe";
 import Text from "components/UI/Text";
+import Profile from "components/Profile";
 
 import * as Style from "./styled";
 
@@ -28,17 +29,7 @@ import * as Style from "./styled";
 
 // TODO: Get the front end in. Then create simple API that indexes stuff and returns data. Then integrate with wallet and call the program.
 
-const data = [
-  {
-    status: "active",
-    from: "dimos851",
-    amount: 6,
-    months: 6,
-    claimedSoFar: 2,
-    token: "SOL",
-    canClaim: "", // date? if past then print immediately?
-  },
-];
+// A place where communities, projects and creators get funded with no platform fees, middle-men or banks.
 
 const Home = () => {
   const handleOnClick = async () => {
@@ -53,19 +44,9 @@ const Home = () => {
 
   return (
     <Style.Container>
-      <Style.StreamsContainer>
-        <Style.Header>
-          <Text font="BOLD" color="PERIWINKLE_GRAY">
-            FROM
-          </Text>
-        </Style.Header>
-        <Style.Stream>
-          <Style.ColorCode />
-          <Style.StreamContent>
-            <Text>Get started by editing pages/index.tsx</Text>
-          </Style.StreamContent>
-        </Style.Stream>
-      </Style.StreamsContainer>
+      <Style.PageContainer>
+        <Profile />
+      </Style.PageContainer>
     </Style.Container>
   );
 };

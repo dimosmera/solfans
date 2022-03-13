@@ -3,6 +3,7 @@ import StyledComponent from "./styled";
 
 interface Props extends TypographyProps {
   component?: React.ElementType;
+  children: React.ReactNode;
 }
 
 /**

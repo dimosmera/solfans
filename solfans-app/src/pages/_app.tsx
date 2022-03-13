@@ -13,8 +13,8 @@ const GlobalStyle = createGlobalStyle`
     padding: 0;
     margin: 0;
     min-height: 100vh;
-    background-color: #0e2439;
-    color: #9cb3c9;
+    background-color: #F6F6F6;
+    color: #000000;
     text-align: center;
   }
 

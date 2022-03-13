@@ -9,5 +9,4 @@ export interface TypographyProps {
   font?: Font;
   size?: Size | Size[];
   color?: Color;
-  children: React.ReactNode;
 }
