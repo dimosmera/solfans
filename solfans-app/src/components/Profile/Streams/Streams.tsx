@@ -63,7 +63,7 @@ const Streams = () => {
           <Style.Column>
             <Text size="MEDIUM" color="MIRAGE">{`${stream.pledge} SOL`}</Text>
           </Style.Column>
-{/* 
+          {/* 
           <Style.Column>
             <Text color="MIRAGE">{`${stream.duration} months`}</Text>
           </Style.Column>

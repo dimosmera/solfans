@@ -3,6 +3,7 @@ import Head from "next/head";
 import subscribe from "utils/subscribe";
 import Text from "components/UI/Text";
 import Profile from "components/Profile";
+import AppHeader from "components/AppHeader";
 
 import * as Style from "./styled";
 
@@ -44,6 +45,8 @@ const Home = () => {
 
   return (
     <Style.Container>
+      <AppHeader />
+
       <Style.PageContainer>
         <Profile />
       </Style.PageContainer>
