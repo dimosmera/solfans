@@ -2,35 +2,6 @@ import styled from "styled-components";
 
 export const Container = styled.div`
   width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-`;
-
-export const HeroContainer = styled.div`
-  width: 100%;
-  max-width: 1500px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  background-color: ${({ theme }) => theme.colors.WHITE};
-  border-radius: 15px;
-  margin-top: 5rem;
-  padding: 25px;
-  position: relative;
-
-  @media (min-width: ${({ theme }) => theme.screenSizes.TABLET_PORTRAIT}px) {
-    padding: 25px;
-  }
-
-  @media (min-width: ${({ theme }) => theme.screenSizes.TABLET_LANDSCAPE}px) {
-    width: 90%;
-  }
-`;
-
-export const SnapshotContainer = styled.div`
-  width: 100%;
   max-width: 1500px;
   display: flex;
   flex-direction: column;
