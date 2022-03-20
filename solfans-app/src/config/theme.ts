@@ -11,6 +11,7 @@ const theme: DefaultTheme = {
     DOWNY: "#5CCEC5",
     MYSTIC_TWO: "#DFE4ED",
     MIRAGE: "#1D243C",
+    TRADEWIND: "#4FAFA7",
   },
   typography: {
     colors: {
@@ -28,6 +29,7 @@ const theme: DefaultTheme = {
       BOLD: 700,
     },
     sizing: {
+      XLL: "34px",
       XL: "24px",
       LARGE: "20px",
       MEDIUM: "18px",

@@ -14,6 +14,7 @@ declare module "styled-components" {
       DOWNY: string;
       MYSTIC_TWO: string;
       MIRAGE: string;
+      TRADEWIND: string;
     };
     typography: {
       colors: {
@@ -31,6 +32,7 @@ declare module "styled-components" {
         BOLD: number;
       };
       sizing: {
+        XLL: string;
         XL: string;
         LARGE: string;
         MEDIUM: string;

@@ -1,9 +1,36 @@
+import { useConnection, useWallet } from "@solana/wallet-adapter-react";
+import { useWalletModal } from "@solana/wallet-adapter-react-ui";
+
+import { fireSweetAlert } from "components/UI/SweetAlerts";
 import Text from "components/UI/Text";
 import Heart from "components/SVGs/Heart";
 
+import SupportCreatorCustomHTML from "./SupportCreatorCustomHTML";
 import * as Style from "./styled";
 
 const HeroContent = () => {
+  const { connection } = useConnection();
+  const { publicKey, sendTransaction, connected } = useWallet();
+  const { setVisible } = useWalletModal();
+
+  const handleTransaction = (solAmount: number, months: number) => {
+    // send transaction
+    console.log("solAmount: ", solAmount);
+    console.log("months: ", months);
+  };
+
+  const handleSupportCreator = () => {
+    if (!connected) {
+      setVisible(true);
+      return;
+    }
+
+    fireSweetAlert({
+      html: <SupportCreatorCustomHTML onTransaction={handleTransaction} />,
+      showConfirmButton: false,
+    });
+  };
+
   return (
     <Style.Container>
       <Style.MainStatsContainer>
@@ -26,7 +53,7 @@ const HeroContent = () => {
         is creating Solfans and Dragon Pets
       </Text>
 
-      <Style.SupportButton>
+      <Style.SupportButton onClick={handleSupportCreator}>
         <Heart color="#FFFFFF" style={{ marginRight: "10px", width: "18px", height: "18px" }} />
 
         <Text color="WHITE" font="BOLD">

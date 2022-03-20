@@ -12,6 +12,8 @@ import { clusterApiUrl } from "@solana/web3.js";
 // Default styles for wallets - can be overridden
 require("@solana/wallet-adapter-react-ui/styles.css");
 
+import "../assets/walletStyles.css";
+
 import theme from "config/theme";
 import queryConfig from "services/api/config/queryConfig";
 

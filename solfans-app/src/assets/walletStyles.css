@@ -1,0 +1,11 @@
+.wallet-adapter-button-trigger {
+  background-color: #5CCEC5 !important;
+}
+
+.wallet-adapter-button-trigger:hover {
+  background-color: #4FAFA7 !important;
+}
+
+.wallet-adapter-modal-fade-in {
+  z-index: 1100 !important;
+}
